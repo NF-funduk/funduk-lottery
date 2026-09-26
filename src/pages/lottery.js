@@ -3,7 +3,7 @@ import { getUser, saveSession } from '../auth.js';
 import { navigate } from '../router.js';
 
 export async function renderLottery(root, lotteryId) {
-  document.title = `HardEvo Lottery · ${l.title}`;
+  document.title = 'HardEvo Lottery · Лотерея';
   const me = getUser();
 
   root.innerHTML = `
@@ -55,6 +55,7 @@ export async function renderLottery(root, lotteryId) {
   const prizes = details.prizes || [];
 
   titleEl.textContent = l.title;
+  document.title = `HardEvo Lottery · ${l.title}`;
 
   if (l.status === 'drawn') {
     await renderWinners(body, lotteryId, l, prizes);
