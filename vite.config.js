@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: '/hardevo-lottery/',
+  base: '/funduk-lottery/',
   build: {
     outDir: 'dist',
   },
