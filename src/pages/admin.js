@@ -288,10 +288,8 @@ export async function renderAdmin(root) {
   const modalTx = $('#modal-transactions');
   const modalResult = $('#modal-result');
 
-  // ============ Навигация ============
   $('#nav-home').addEventListener('click', () => navigate('/home'));
 
-  // ============ Вкладки ============
   root.querySelectorAll('.admin-tab').forEach((tab) => {
     tab.addEventListener('click', () => {
       root.querySelectorAll('.admin-tab').forEach((t) => t.classList.remove('active'));
@@ -303,7 +301,6 @@ export async function renderAdmin(root) {
     });
   });
 
-  // ============ Chip picker ============
   function setupChipPicker(selector, onChange) {
     root.querySelectorAll(`${selector} .chip`).forEach((chip) => {
       chip.addEventListener('click', () => {
@@ -320,7 +317,6 @@ export async function renderAdmin(root) {
     });
   }
 
-  // ============ Загрузка юзеров ============
   let currentUsers = [];
 
   async function loadUsers() {
@@ -388,7 +384,6 @@ export async function renderAdmin(root) {
     }
   }
 
-  // ============ Загрузка лотерей ============
   async function loadLotteriesTable() {
     try {
       const { lotteries } = await admin.listAllLotteries();
@@ -493,7 +488,6 @@ export async function renderAdmin(root) {
     }
   }
 
-  // ============ Создание пользователя ============
   let createStatus = 'intern';
   setupChipPicker('#create-status-picker', (s) => (createStatus = s));
 
@@ -546,7 +540,6 @@ export async function renderAdmin(root) {
     }
   });
 
-  // ============ Редактирование ============
   let editTarget = null;
   let editStatus = 'intern';
 
@@ -587,7 +580,6 @@ export async function renderAdmin(root) {
     }
   });
 
-  // ============ Баланс ============
   let balanceTarget = null;
 
   function openBalance(userId, username) {
@@ -625,7 +617,6 @@ export async function renderAdmin(root) {
     }
   });
 
-  // ============ Выдача билетов ============
   let certsTarget = null;
   let certsLottery = null;
 
@@ -695,7 +686,6 @@ export async function renderAdmin(root) {
     }
   });
 
-  // ============ Транзакции пользователя ============
   async function openTransactions(userId, username) {
     $('#tx-username').textContent = username;
     $('#tx-list').innerHTML = '<div class="empty-state">Загрузка…</div>';
@@ -734,7 +724,6 @@ export async function renderAdmin(root) {
 
   $('#tx-close').addEventListener('click', () => modalTx.classList.add('hidden'));
 
-  // ============ Создание лотереи ============
   const prizesList = $('#prizes-list');
 
   function addPrizeRow(place, title = '') {
@@ -847,7 +836,6 @@ export async function renderAdmin(root) {
     }
   });
 
-  // ============ Статистика лотерей ============
   async function loadLotteriesStat() {
     try {
       const { lotteries } = await lottery.all();
@@ -858,7 +846,6 @@ export async function renderAdmin(root) {
     }
   }
 
-  // ============ Сброс пароля ============
   async function doResetPassword(userId, username) {
     if (!confirm(`Сбросить пароль пользователю ${username}?`)) return;
     try {
@@ -880,7 +867,6 @@ export async function renderAdmin(root) {
     }
   }
 
-  // ============ Удаление ============
   async function doDelete(userId, username) {
     if (!confirm(`Удалить пользователя ${username}? Это действие нельзя отменить.`)) return;
     try {
@@ -892,7 +878,6 @@ export async function renderAdmin(root) {
     }
   }
 
-  // ============ Модалка результата ============
   function showResult(title, subtitle, html) {
     $('#result-title').textContent = title;
     $('#result-subtitle').textContent = subtitle;
@@ -919,7 +904,6 @@ export async function renderAdmin(root) {
 
   $('#result-close').addEventListener('click', () => modalResult.classList.add('hidden'));
 
-  // ============ Утилиты ============
   function escapeHtml(str) {
     return String(str ?? '').replace(/[&<>"']/g, (c) => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -939,7 +923,6 @@ export async function renderAdmin(root) {
     });
   }
 
-  // ============ Старт ============
   await loadUsers();
   await loadLotteriesStat();
 }

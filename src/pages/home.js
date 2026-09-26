@@ -71,7 +71,6 @@ export async function renderHome(root) {
     </div>
   `;
 
-  // ============ Навигация ============
   root.querySelector('#profile-btn').addEventListener('click', (e) => {
     if (e.target.closest('#logout-btn')) return;
     navigate('/profile');
@@ -84,7 +83,6 @@ export async function renderHome(root) {
   const adminBtn = root.querySelector('#nav-admin');
   if (adminBtn) adminBtn.addEventListener('click', () => navigate('/admin'));
 
-  // ============ Фильтр + загрузка ============
   const grid = root.querySelector('#lotteries-grid');
   let allLotteries = [];
   let currentFilter = 'active';
@@ -132,7 +130,6 @@ export async function renderHome(root) {
     });
   });
 
-  // ============ Обратная связь ============
   const modalFeedback = root.querySelector('#feedback-modal');
   const feedbackBtn = root.querySelector('#feedback-btn');
   const feedbackText = root.querySelector('#feedback-text');
@@ -180,13 +177,9 @@ export async function renderHome(root) {
     }
   });
 
-  // ============ Старт ============
   await loadLotteries();
 }
 
-// ============================================================
-// Карточка лотереи
-// ============================================================
 function renderLotteryCard(l) {
   const sold = Number(l.sold_tickets) || 0;
   const total = Number(l.total_tickets) || 1;
@@ -249,9 +242,6 @@ function renderLotteryCard(l) {
   `;
 }
 
-// ============================================================
-// Таймер
-// ============================================================
 function formatDeadline(deadlineIso) {
   if (!deadlineIso) return null;
   const d = new Date(deadlineIso);

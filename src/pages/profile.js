@@ -98,7 +98,6 @@ export async function renderProfile(root) {
     card.addEventListener('click', () => navigate('/lottery/' + card.dataset.lotteryId));
   });
 
-  // ============ Смена пароля ============
   const modalPwd = root.querySelector('#modal-password');
 
   root.querySelector('#change-password-btn').addEventListener('click', () => {
@@ -145,9 +144,6 @@ export async function renderProfile(root) {
   });
 }
 
-// ============================================================
-// Карточка истории
-// ============================================================
 function renderHistoryCard(h) {
   const isWon = h.won_place != null;
   const statusMap = {

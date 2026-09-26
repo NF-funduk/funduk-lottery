@@ -35,7 +35,6 @@ export async function renderLottery(root, lotteryId) {
   const titleEl = root.querySelector('#lottery-title');
   const balanceEl = root.querySelector('#my-balance');
 
-  // ============ Загрузка данных ============
   let details, ticketsData, freeCount;
 
   try {
@@ -44,8 +43,8 @@ export async function renderLottery(root, lotteryId) {
       lottery.tickets(lotteryId),
       lottery.myFreeTickets(lotteryId),
     ]);
-    details = dRes;            // { lottery, prizes }
-    ticketsData = tRes.tickets; // array
+    details = dRes;
+    ticketsData = tRes.tickets;
     freeCount = fRes.count;
   } catch (err) {
     body.innerHTML = `<div class="empty-state" style="color:var(--danger)">Ошибка: ${err.message}</div>`;
@@ -57,20 +56,16 @@ export async function renderLottery(root, lotteryId) {
 
   titleEl.textContent = l.title;
 
-  // Если лотерея уже разыграна — пока заглушку (сделаем в B5)
-   // Если лотерея уже разыграна — показываем победителей
   if (l.status === 'drawn') {
     await renderWinners(body, lotteryId, l, prizes);
     return;
   }
 
-  // Если отменена
   if (l.status === 'cancelled') {
     body.innerHTML = `<div class="empty-state">Лотерея отменена.</div>`;
     return;
   }
 
-  // ============ Разметка ============
   const sold = ticketsData.filter((t) => t.user_id).length;
   const total = ticketsData.length;
   const price = Number(l.ticket_price) || 0;
@@ -164,7 +159,6 @@ export async function renderLottery(root, lotteryId) {
     </div>
   `;
 
-  // ============ Сетка билетов ============
   const grid = body.querySelector('#tickets-grid');
   const selCountEl = body.querySelector('#sel-count');
   const totalCostEl = body.querySelector('#total-cost');
@@ -173,7 +167,7 @@ export async function renderLottery(root, lotteryId) {
   const buyBtn = body.querySelector('#buy-btn');
   const buyError = body.querySelector('#buy-error');
 
-  const selected = new Set(); // числа выбранных билетов
+  const selected = new Set();
 
   function renderGrid() {
     grid.innerHTML = ticketsData.map((t) => {
@@ -201,7 +195,6 @@ export async function renderLottery(root, lotteryId) {
     const count = selected.size;
     selCountEl.textContent = count;
 
-    // ограничим useFree: не больше count, не больше freeCount
     const maxFree = Math.min(freeCount, count);
     useFreeInput.max = maxFree;
     let useFree = parseInt(useFreeInput.value, 10) || 0;
@@ -213,7 +206,6 @@ export async function renderLottery(root, lotteryId) {
     const cost = paid * price;
     totalCostEl.textContent = cost;
 
-    // валидация
     let canBuy = true;
     if (count === 0) canBuy = false;
     if (count > remaining) canBuy = false;
@@ -238,14 +230,12 @@ export async function renderLottery(root, lotteryId) {
     }
     const needed = Math.min(3, remaining, available.length);
     selected.clear();
-    // случайные без повторов
     const shuffled = [...available].sort(() => Math.random() - 0.5);
     for (let i = 0; i < needed; i++) selected.add(shuffled[i].number);
     renderGrid();
     updateCheckout();
   });
 
-  // ============ Покупка ============
   buyBtn.addEventListener('click', async () => {
     buyError.textContent = '';
     const useFree = parseInt(useFreeInput.value, 10) || 0;
@@ -258,21 +248,17 @@ export async function renderLottery(root, lotteryId) {
       const res = await lottery.buy(lotteryId, nums, useFree);
       console.log('BUY RESPONSE:', JSON.stringify(res));
 
-      // обновим баланс в шапке
       const newBal = res?.result?.new_balance ?? res?.user?.balance;
       if (newBal != null) {
         me.balance = newBal;
         balanceEl.textContent = newBal;
-        // обновляем localStorage
         const curUser = JSON.parse(localStorage.getItem('funduk_user') || '{}');
         curUser.balance = newBal;
         localStorage.setItem('funduk_user', JSON.stringify(curUser));
       }
-      // Если сервер вернул полный объект — обновим его целиком
       if (res?.user) {
         saveSession(localStorage.getItem('funduk_token'), res.user);
       }
-      // обновим данные
       const [tRes, fRes] = await Promise.all([
         lottery.tickets(lotteryId),
         lottery.myFreeTickets(lotteryId),
@@ -281,11 +267,9 @@ export async function renderLottery(root, lotteryId) {
       freeCount = fRes.count;
       freeCountEl.textContent = freeCount;
 
-      // заново отрисуем сетку + чек
       selected.clear();
       renderGrid();
 
-      // обновим "свободных билетов"
       const newMyCount = ticketsData.filter((t) => t.user_id === me.id).length;
       const newRemaining = Math.max(0, maxPerUser - newMyCount);
       body.querySelector('.checkout-row:nth-child(2) b').textContent = `${newRemaining} из ${maxPerUser}`;
@@ -310,7 +294,6 @@ export async function renderLottery(root, lotteryId) {
     }
   });
 
-   // ============ Разыграть сейчас (только админ) ============
   const drawBtn = body.querySelector('#draw-now-btn');
   if (drawBtn) {
     drawBtn.addEventListener('click', async () => {
@@ -321,9 +304,7 @@ export async function renderLottery(root, lotteryId) {
         const res = await lottery.draw(lotteryId);
         const r = res.result;
         alert(`🎉 Розыгрыш завершён!\nРазыграно призов: ${r.drawn_count} из ${r.total_prizes}`);
-        // Перезагрузим страницу — она покажет победителей
         navigate('/lottery/' + lotteryId);
-        // принудительно re-render
         setTimeout(() => window.location.reload(), 50);
       } catch (err) {
         const map = {
@@ -340,14 +321,10 @@ export async function renderLottery(root, lotteryId) {
     });
   }
 
-  // ============ Старт ============
   renderGrid();
   updateCheckout();
 }
 
-// ============================================================
-// Утилиты
-// ============================================================
 function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, (c) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',

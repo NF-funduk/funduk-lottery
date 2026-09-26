@@ -46,7 +46,6 @@ export async function renderHistory(root) {
   let allLotteries = [];
   let currentFilter = 'all';
 
-  // загрузка
   try {
     const { lotteries } = await lottery.all();
     allLotteries = lotteries || [];
@@ -118,7 +117,6 @@ export async function renderHistory(root) {
     });
   }
 
-  // фильтры
   root.querySelectorAll('.filter-tab').forEach((tab) => {
     tab.addEventListener('click', () => {
       root.querySelectorAll('.filter-tab').forEach((t) => t.classList.remove('active'));
@@ -131,9 +129,6 @@ export async function renderHistory(root) {
   renderList();
 }
 
-// ============================================================
-// Утилиты
-// ============================================================
 function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, (c) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',

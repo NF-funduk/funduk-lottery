@@ -8,7 +8,6 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
-// ============ LOGIN ============
 export async function loginRequest(username, password) {
   const res = await fetch(`${SUPABASE_URL}/functions/v1/login`, {
     method: 'POST',
@@ -23,7 +22,6 @@ export async function loginRequest(username, password) {
   return data; // { token, user }
 }
 
-// ============ GENERIC CALL ============
 export async function callFunction(name, payload) {
   const token = localStorage.getItem('funduk_token');
   const res = await fetch(`${SUPABASE_URL}/functions/v1/${name}`, {
@@ -40,7 +38,6 @@ export async function callFunction(name, payload) {
   return data;
 }
 
-// ============ ADMIN ============
 export const admin = {
   listUsers: () => callFunction('admin', { action: 'list_users' }),
   createUser: (username, status, balance) =>
@@ -67,7 +64,6 @@ export const admin = {
     callFunction('admin', { action: 'list_all_lotteries' }),
 };
 
-// ============ LOTTERY ============
 export const lottery = {
   list: () => callFunction('lottery', { action: 'list' }),
   details: (lottery_id) => callFunction('lottery', { action: 'details', lottery_id }),

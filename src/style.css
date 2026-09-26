@@ -662,9 +662,6 @@ body { padding: 32px 24px; position: relative; }
 }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
 
-/* ============================================================ */
-/* LOGIN                                                         */
-/* ============================================================ */
 .login-wrap {
   min-height: 80vh;
   display: flex;
@@ -727,9 +724,7 @@ body { padding: 32px 24px; position: relative; }
 
 .signature { margin-top: 60px; }
 
-/* ============================================================ */
-/* LOTTERIES GRID                                                */
-/* ============================================================ */
+
 .lotteries-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 340px));
@@ -896,9 +891,7 @@ body { padding: 32px 24px; position: relative; }
   padding: 10px;
 }
 
-/* ============================================================ */
-/* LOTTERY PAGE                                                  */
-/* ============================================================ */
+
 .lottery-page { margin-top: 8px; }
 
 .lottery-info {
@@ -1150,9 +1143,7 @@ body { padding: 32px 24px; position: relative; }
 .prize-title { font-weight: 600; color: #fff; font-size: 14px; }
 .prize-desc { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
 
-/* ============================================================ */
-/* WINNERS                                                       */
-/* ============================================================ */
+
 .winners-wrap { margin-top: 24px; }
 
 .winners-title {
@@ -1220,9 +1211,7 @@ body { padding: 32px 24px; position: relative; }
 .winner-meta { font-size: 13px; color: var(--text-dim); margin-top: 6px; }
 .winner-meta b { color: #fff; }
 
-/* ============================================================ */
-/* PROFILE                                                       */
-/* ============================================================ */
+
 .profile-section-title {
   font-size: 15px;
   font-weight: 600;
@@ -1373,9 +1362,7 @@ body { padding: 32px 24px; position: relative; }
   gap: 8px;
 }
 
-/* ============================================================ */
-/* TRANSACTIONS                                                  */
-/* ============================================================ */
+
 .tx-list-wrap {
   display: flex;
   flex-direction: column;
@@ -1415,9 +1402,7 @@ body { padding: 32px 24px; position: relative; }
 .tx-amount.positive { color: var(--success); }
 .tx-amount.negative { color: var(--danger); }
 
-/* ============================================================ */
-/* HISTORY PAGE                                                  */
-/* ============================================================ */
+
 .filter-tabs-center {
   display: flex;
   justify-content: center;
@@ -1543,9 +1528,7 @@ body { padding: 32px 24px; position: relative; }
   color: var(--text-dim);
 }
 
-/* ============================================================ */
-/* LOGO (CSS)                                                    */
-/* ============================================================ */
+
 .logo-wrap {
   display: inline-flex;
   align-items: baseline;
@@ -1608,9 +1591,7 @@ body { padding: 32px 24px; position: relative; }
   letter-spacing: 0.02em;
 }
 
-/* ============================================================ */
-/* USER PANEL                                                    */
-/* ============================================================ */
+
 .user-panel {
   display: flex;
   align-items: center;
@@ -1784,7 +1765,6 @@ body { padding: 32px 24px; position: relative; }
     padding: 20px 14px;
   }
 
-  /* Header */
   .header {
     flex-direction: column;
     align-items: stretch;
@@ -1800,7 +1780,6 @@ body { padding: 32px 24px; position: relative; }
     flex-wrap: wrap;
   }
 
-  /* Logo */
   .logo-har,
   .logo-evo {
     font-size: 22px;
@@ -1814,7 +1793,6 @@ body { padding: 32px 24px; position: relative; }
     font-size: 12px;
   }
 
-  /* User panel */
   .user-panel {
     width: 100%;
     justify-content: space-between;
@@ -1829,7 +1807,6 @@ body { padding: 32px 24px; position: relative; }
     font-size: 17px;
   }
 
-  /* Summary */
   .summary {
     flex-direction: column;
   }
@@ -1838,7 +1815,6 @@ body { padding: 32px 24px; position: relative; }
     min-width: 100%;
   }
 
-  /* Lotteries grid */
   .lotteries-grid {
     grid-template-columns: 1fr;
     justify-content: stretch;
@@ -1848,7 +1824,6 @@ body { padding: 32px 24px; position: relative; }
     max-width: 100%;
   }
 
-  /* Tickets grid */
   .tickets-grid {
     grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
     gap: 6px;
@@ -1860,7 +1835,6 @@ body { padding: 32px 24px; position: relative; }
     border-radius: 10px;
   }
 
-  /* Tables — горизонтальный скролл */
   .table-wrap {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -1876,7 +1850,6 @@ body { padding: 32px 24px; position: relative; }
     font-size: 10px;
   }
 
-  /* Modals */
   .modal-content {
     padding: 20px 18px;
     border-radius: 18px;
@@ -1887,7 +1860,6 @@ body { padding: 32px 24px; position: relative; }
     font-size: 17px;
   }
 
-  /* Forms */
   .row-2 {
     grid-template-columns: 1fr;
   }
@@ -1896,7 +1868,6 @@ body { padding: 32px 24px; position: relative; }
     grid-template-columns: 1fr 70px 32px;
   }
 
-  /* Profile compact */
   .profile-compact {
     flex-direction: column;
     align-items: stretch;
@@ -1928,12 +1899,10 @@ body { padding: 32px 24px; position: relative; }
     flex: 1;
   }
 
-  /* History page */
   .filter-tabs-center {
     margin-bottom: 16px;
   }
 
-  /* Admin tabs */
   .admin-tabs {
     width: 100%;
   }
@@ -1943,7 +1912,6 @@ body { padding: 32px 24px; position: relative; }
     text-align: center;
   }
 
-  /* Winners */
   .winner-card {
     padding: 14px 16px;
     gap: 12px;
@@ -1959,7 +1927,6 @@ body { padding: 32px 24px; position: relative; }
     font-size: 14px;
   }
 
-  /* 404 */
   .nf-code {
     font-size: 64px;
   }
@@ -1968,7 +1935,6 @@ body { padding: 32px 24px; position: relative; }
     font-size: 15px;
   }
 
-  /* Checkout */
   .checkout-card,
   .prizes-card {
     padding: 16px;
@@ -2091,7 +2057,6 @@ body { padding: 32px 24px; position: relative; }
   font-family: 'Inter', sans-serif;
 }
 
-/* Кнопка-кружок */
 .chat-bubble {
   position: relative;
   width: 56px;
@@ -2143,7 +2108,6 @@ body { padding: 32px 24px; position: relative; }
 
 .chat-bubble-badge.hidden { display: none; }
 
-/* Окно чата */
 .chat-window {
   position: absolute;
   bottom: 72px;
@@ -2169,7 +2133,6 @@ body { padding: 32px 24px; position: relative; }
   to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 
-/* Header */
 .chat-header {
   display: flex;
   justify-content: space-between;
@@ -2217,7 +2180,6 @@ body { padding: 32px 24px; position: relative; }
 
 .chat-close svg { width: 16px; height: 16px; }
 
-/* Messages */
 .chat-messages {
   flex: 1;
   overflow-y: auto;
@@ -2292,7 +2254,6 @@ body { padding: 32px 24px; position: relative; }
   opacity: 0.9;
 }
 
-/* Emoji picker */
 .chat-emoji-picker {
   position: absolute;
   bottom: 60px;
@@ -2330,7 +2291,6 @@ body { padding: 32px 24px; position: relative; }
   transform: scale(1.2);
 }
 
-/* Input */
 .chat-input-wrap {
   display: flex;
   align-items: flex-end;
@@ -2411,7 +2371,6 @@ body { padding: 32px 24px; position: relative; }
   stroke: #fff;
 }
 
-/* Мобилка */
 @media (max-width: 480px) {
   #chat-widget { bottom: 16px; right: 16px; }
 

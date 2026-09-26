@@ -21,7 +21,6 @@ function guarded(handler) {
   };
 }
 
-// редирект с корня
 register('/', () => {
   navigate(isLoggedIn() ? '/home' : '/login');
 });
@@ -40,7 +39,6 @@ register('/admin', guarded((r) => renderAdmin(r)));
 register('/history', guarded((r) => renderHistory(r)));
 register('/lottery/:id', guarded((r, params) => renderLottery(r, params.id)));
 
-// 404
 setNotFound(() => {
   document.title = 'HardEvo Lottery · 404';
   root.innerHTML = `

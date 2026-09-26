@@ -15,9 +15,6 @@ let isOpen = false;
 let unreadCount = 0;
 let currentUser = null;
 
-// ============================================================
-// Emoji picker (быстрый)
-// ============================================================
 const EMOJIS = [
   '😀', '😄', '😂', '🤣', '😊', '😍', '😘', '😎', '🤔', '🙄',
   '😴', '😭', '😅', '🥲', '🤯', '🥳', '😱', '🤝', '👋', '👍',
@@ -26,9 +23,6 @@ const EMOJIS = [
   '🚀', '⚡', '🌙', '☀️', '🌈', '⚔️', '🛡️', '💰', '💎', '🎯',
 ];
 
-// ============================================================
-// Инициализация виджета
-// ============================================================
 export function initChatWidget() {
   if (initialized) return;
   if (!isLoggedIn()) return;
@@ -37,7 +31,6 @@ export function initChatWidget() {
   currentUser = getUser();
   if (!currentUser) return;
 
-  // Вставляем HTML виджета в body
   const widget = document.createElement('div');
   widget.id = 'chat-widget';
   widget.innerHTML = `
@@ -81,11 +74,9 @@ export function initChatWidget() {
   `;
   document.body.appendChild(widget);
 
-  // Собираем emoji-picker
   const picker = document.getElementById('chat-emoji-picker');
   picker.innerHTML = EMOJIS.map((e) => `<button class="emoji-btn">${e}</button>`).join('');
 
-  // Ссылки
   const bubble = document.getElementById('chat-bubble');
   const win = document.getElementById('chat-window');
   const closeBtn = document.getElementById('chat-close');
@@ -96,7 +87,6 @@ export function initChatWidget() {
   const emojiBtn = document.getElementById('chat-emoji-btn');
   const emojiPicker = document.getElementById('chat-emoji-picker');
 
-  // ============ Открыть / закрыть ============
   async function openChat() {
     isOpen = true;
     win.classList.remove('hidden');
@@ -122,7 +112,6 @@ export function initChatWidget() {
   bubble.addEventListener('click', openChat);
   closeBtn.addEventListener('click', closeChat);
 
-  // ============ Загрузка сообщений ============
   async function loadMessages() {
     try {
       const res = await chat.list(100);
@@ -163,7 +152,6 @@ ${m.user_status ? `<span class="role-badge chat-mini-badge" data-role="${m.user_
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
 
-  // ============ Отправка ============
   async function sendMessage() {
     const text = input.value.trim();
     if (!text) return;
@@ -174,10 +162,7 @@ ${m.user_status ? `<span class="role-badge chat-mini-badge" data-role="${m.user_
 
     try {
       const res = await chat.send(text);
-      // сообщение добавится через realtime — не добавляем вручную
-      // (но если realtime не отвечает — можно добавить для страховки)
       if (res.message) {
-        // проверим, есть ли уже в списке
         if (!messages.find((m) => m.id === res.message.id)) {
           messages.push(res.message);
           renderMessages();
@@ -204,13 +189,11 @@ ${m.user_status ? `<span class="role-badge chat-mini-badge" data-role="${m.user_
     }
   });
 
-  // Авто-высота textarea
   input.addEventListener('input', () => {
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 120) + 'px';
   });
 
-  // ============ Emoji picker ============
   emojiBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     emojiPicker.classList.toggle('hidden');
@@ -231,7 +214,6 @@ ${m.user_status ? `<span class="role-badge chat-mini-badge" data-role="${m.user_
     }
   });
 
-  // ============ Realtime ============
   function subscribeRealtime() {
     if (channel) return;
     channel = supabase
@@ -256,8 +238,6 @@ ${m.user_status ? `<span class="role-badge chat-mini-badge" data-role="${m.user_
   }
 
   function unsubscribeRealtime() {
-    // не отписываемся полностью, чтобы ловить новые сообщения и для бейджа
-    // отписку делаем только при выходе из аккаунта (logout → reload)
   }
 
   function updateBadge() {
@@ -269,13 +249,9 @@ ${m.user_status ? `<span class="role-badge chat-mini-badge" data-role="${m.user_
     }
   }
 
-  // ============ Подписка сразу, чтобы считать unread ============
   subscribeRealtime();
 }
 
-// ============================================================
-// Утилиты
-// ============================================================
 function formatTime(iso) {
   if (!iso) return '';
   const d = new Date(iso);
@@ -290,7 +266,6 @@ function escapeHtml(str) {
 }
 
 function linkify(text) {
-  // простой линкифаер для http/https
   return text.replace(
     /(https?:\/\/[^\s<]+)/g,
     '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>',
