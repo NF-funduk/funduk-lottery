@@ -89,7 +89,6 @@ async function checkSession() {
       msg.includes('no_token')
     ) {
       logout();
-      alert('🔒 Твой аккаунт больше не активен. Войди заново.');
       location.hash = '#/login';
       setTimeout(() => location.reload(), 50);
     }

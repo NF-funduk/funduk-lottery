@@ -2,6 +2,8 @@ import { admin, lottery, profile } from '../supabase.js';
 import { getUser, saveSession } from '../auth.js';
 import { navigate } from '../router.js';
 import { logoHtml } from '../logo.js';
+import { showToast } from '../toast.js';
+import { showConfirm } from '../confirm.js';
 
 const STATUS_LABELS = {
   intern: 'Стажёр',
@@ -449,11 +451,16 @@ export async function renderAdmin(root) {
   }
 
   async function doDrawLottery(id, title) {
-    if (!confirm(`Разыграть лотерею "${title}" сейчас?\nОтменить нельзя.`)) return;
+    const ok = await showConfirm({
+      title: 'Разыграть лотерею?',
+      message: `Разыграть лотерею <b>"${escapeHtml(title)}"</b> сейчас?<br><br>Отменить нельзя.`,
+      confirmText: 'Разыграть',
+    });
+    if (!ok) return;
     try {
       const res = await lottery.draw(id);
       const r = res.result;
-      alert(`🎉 Розыгрыш завершён!\nРазыграно призов: ${r.drawn_count} из ${r.total_prizes}`);
+      showToast(`🎉 Розыгрыш завершён! Разыграно: ${r.drawn_count} из ${r.total_prizes}`, 'success');
       loadLotteriesTable();
       loadLotteriesStat();
     } catch (err) {
@@ -462,16 +469,22 @@ export async function renderAdmin(root) {
         lottery_cancelled: 'Лотерея отменена',
         forbidden: 'Нет прав',
       };
-      alert(map[err.message] || 'Ошибка: ' + err.message);
+      showToast(map[err.message] || 'Ошибка: ' + err.message, 'error');
     }
   }
 
-  async function doCancelLottery(id, title) {
-    if (!confirm(`Отменить лотерею "${title}"?\nКупленные билеты будут возвращены, баллы — возвращены.`)) return;
+   async function doCancelLottery(id, title) {
+    const ok = await showConfirm({
+      title: 'Отменить лотерею?',
+      message: `Отменить лотерею <b>"${escapeHtml(title)}"</b>?<br><br>Купленные билеты будут возвращены, баллы — возвращены.`,
+      confirmText: 'Отменить',
+      danger: true,
+    });
+    if (!ok) return;
     try {
       const res = await admin.cancelLottery(id);
       const r = res.result;
-      alert(`Лотерея отменена.\nВозвращено баллов: ${r.refunded_total}\nЗатронуто юзеров: ${r.refunded_users}`);
+      showToast(`Лотерея отменена.\nВозвращено баллов: ${r.refunded_total}\nЗатронуто юзеров: ${r.refunded_users}`);
       loadLotteriesTable();
       loadLotteriesStat();
       loadUsers();
@@ -480,18 +493,24 @@ export async function renderAdmin(root) {
         already_drawn: 'Уже разыграна — отмена невозможна',
         already_cancelled: 'Уже отменена',
       };
-      alert(map[err.message] || 'Ошибка: ' + err.message);
+      showToast(map[err.message] || 'Ошибка: ' + err.message);
     }
   }
 
-  async function doDeleteLottery(id, title) {
-    if (!confirm(`УДАЛИТЬ лотерею "${title}" навсегда?\nВся история (билеты, победители) будет стёрта. Баллы НЕ вернутся.`)) return;
+    async function doDeleteLottery(id, title) {
+    const ok = await showConfirm({
+      title: 'Удалить лотерею?',
+      message: `УДАЛИТЬ лотерею <b>"${escapeHtml(title)}"</b> навсегда?<br><br>Вся история (билеты, победители) будет стёрта. <b>Баллы НЕ вернутся.</b>`,
+      confirmText: 'Удалить навсегда',
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await admin.deleteLottery(id);
       loadLotteriesTable();
       loadLotteriesStat();
     } catch (err) {
-      alert('Ошибка: ' + err.message);
+      showToast('Ошибка: ' + err.message);
     }
   }
 
@@ -879,8 +898,13 @@ export async function renderAdmin(root) {
     }
   }
 
-  async function doResetPassword(userId, username) {
-    if (!confirm(`Сбросить пароль пользователю ${username}?`)) return;
+    async function doResetPassword(userId, username) {
+    const ok = await showConfirm({
+      title: 'Сбросить пароль?',
+      message: `Сбросить пароль пользователю <b>${escapeHtml(username)}</b>?`,
+      confirmText: 'Сбросить',
+    });
+    if (!ok) return;
     try {
       const res = await admin.resetPassword(userId);
       showResult('Пароль сброшен', `Новый пароль для ${escapeHtml(username)}. Передайте его другу.`, `
@@ -896,18 +920,24 @@ export async function renderAdmin(root) {
       `);
       attachCopyPassword();
     } catch (err) {
-      alert('Ошибка: ' + err.message);
+      showToast('Ошибка: ' + err.message);
     }
   }
 
-  async function doDelete(userId, username) {
-    if (!confirm(`Удалить пользователя ${username}? Это действие нельзя отменить.`)) return;
+    async function doDelete(userId, username) {
+    const ok = await showConfirm({
+      title: 'Удалить пользователя?',
+      message: `Удалить пользователя <b>${escapeHtml(username)}</b>?<br><br>Это действие нельзя отменить.`,
+      confirmText: 'Удалить',
+      danger: true,
+    });
+    if (!ok) return;
     try {
       await admin.deleteUser(userId);
       loadUsers();
     } catch (err) {
       const map = { cannot_delete_self: 'Нельзя удалить самого себя' };
-      alert(map[err.message] || 'Ошибка: ' + err.message);
+      showToast(map[err.message] || 'Ошибка: ' + err.message);
     }
   }
 

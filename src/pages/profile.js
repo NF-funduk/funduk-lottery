@@ -2,6 +2,7 @@ import { profile } from '../supabase.js';
 import { logout } from '../auth.js';
 import { navigate } from '../router.js';
 import { logoHtml } from '../logo.js';
+import { showToast } from '../toast.js';
 
 const STATUS_LABELS = {
   intern: 'Стажёр',
@@ -131,7 +132,7 @@ export async function renderProfile(root) {
     try {
       await profile.changePassword(oldPwd, newPwd);
       modalPwd.classList.add('hidden');
-      alert('✅ Пароль изменён!');
+      showToast('✅ Пароль изменён!');
     } catch (err) {
       const map = {
         wrong_password: 'Неверный текущий пароль',

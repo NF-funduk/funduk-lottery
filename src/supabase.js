@@ -17,7 +17,6 @@ function handleSessionExpired() {
   if (_sessionExpiredShown) return;
   _sessionExpiredShown = true;
 
-  alert('🔒 Сессия истекла. Пожалуйста, зайди заново.');
   if (location.hash !== '#/login') {
     location.hash = '#/login';
     setTimeout(() => location.reload(), 50);
@@ -117,6 +116,7 @@ export const lottery = {
   draw: (lottery_id) => callFunction('lottery', { action: 'draw', lottery_id }),
   winners: (lottery_id) => callFunction('lottery', { action: 'winners', lottery_id }),
   all: () => callFunction('lottery', { action: 'all' }),
+  full: (lottery_id) => callFunction('lottery', { action: 'full', lottery_id }),
 };
 
 export const profile = {

@@ -73,6 +73,22 @@ Deno.serve(async (req) => {
         return json(data);
       }
 
+      case "full": {
+        const { lottery_id } = body;
+        if (!lottery_id) return json({ error: "lottery_id_required" }, 400);
+        const { data, error } = await supabase.rpc("get_lottery_full", {
+          p_lottery_id: lottery_id,
+          p_user_id: userId,
+        });
+        if (error) {
+          if (error.message.includes("lottery_not_found")) {
+            return json({ error: "lottery_not_found" }, 404);
+          }
+          return json({ error: "db_error", details: error.message }, 500);
+        }
+        return json(data);
+      }
+
       case "tickets": {
         const { lottery_id } = body;
         if (!lottery_id) return json({ error: "lottery_id_required" }, 400);

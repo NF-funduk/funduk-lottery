@@ -2,6 +2,8 @@ import { lottery } from '../supabase.js';
 import { getUser, saveSession, logout } from '../auth.js';
 import { navigate } from '../router.js';
 import { logoHtml } from '../logo.js';
+import { showToast } from '../toast.js';
+import { showConfirm } from '../confirm.js';
 
 export async function renderLottery(root, lotteryId) {
   document.title = 'HardEvo Lottery · Лотерея';
@@ -61,14 +63,6 @@ export async function renderLottery(root, lotteryId) {
           <b id="buy-paid-limit">0</b>
         </div>
 
-        <label class="field-label">Оплатить бесплатными</label>
-        <div class="free-slider-wrap">
-          <input type="range" id="free-slider" min="0" max="0" value="0" />
-          <div class="free-slider-controls">
-            <input type="number" id="free-number" value="0" min="0" max="0" />
-            <button class="btn ghost" id="free-max-btn" title="Использовать все">Макс</button>
-          </div>
-        </div>
 
         <div class="buy-row total">
           <span>К оплате баллами</span>
@@ -147,24 +141,19 @@ export async function renderLottery(root, lotteryId) {
   const titleEl = root.querySelector('#lottery-title');
   const balanceEl = root.querySelector('#my-balance');
 
-  let details, ticketsData, freeCount;
+    let fullRes, ticketsData, freeCount;
+  let l, prizes;
 
   try {
-    const [dRes, tRes, fRes] = await Promise.all([
-      lottery.details(lotteryId),
-      lottery.tickets(lotteryId),
-      lottery.myFreeTickets(lotteryId),
-    ]);
-    details = dRes;
-    ticketsData = tRes.tickets;
-    freeCount = fRes.count;
+    fullRes = await lottery.full(lotteryId);
+    l = fullRes.lottery;
+    prizes = fullRes.prizes || [];
+    ticketsData = fullRes.tickets || [];
+    freeCount = fullRes.free_count || 0;
   } catch (err) {
     body.innerHTML = `<div class="empty-state" style="color:var(--danger)">Ошибка: ${err.message}</div>`;
     return;
   }
-
-  const l = details.lottery;
-  const prizes = details.prizes || [];
 
   titleEl.textContent = l.title;
   document.title = `HardEvo Lottery · ${l.title}`;
@@ -358,9 +347,6 @@ export async function renderLottery(root, lotteryId) {
   const buyCount = root.querySelector('#buy-count');
   const buyFreeAvailable = root.querySelector('#buy-free-available');
   const buyPaidLimit = root.querySelector('#buy-paid-limit');
-  const freeSlider = root.querySelector('#free-slider');
-  const freeNumber = root.querySelector('#free-number');
-  const freeMaxBtn = root.querySelector('#free-max-btn');
   const buyCost = root.querySelector('#buy-cost');
   const buyBalance = root.querySelector('#buy-balance');
   const buyError = root.querySelector('#buy-error');
@@ -402,40 +388,12 @@ export async function renderLottery(root, lotteryId) {
     if (selected.size === 0) return;
     const count = selected.size;
     maxFree = Math.min(freeCount, count);
-    freeToUse = maxFree;
 
-    freeSlider.min = 0;
-    freeSlider.max = maxFree;
-    freeSlider.value = freeToUse;
-    freeNumber.min = 0;
-    freeNumber.max = maxFree;
-    freeNumber.value = freeToUse;
+    freeToUse = maxFree;
 
     recalcBuy();
     modalBuy.classList.remove('hidden');
   }
-
-  freeSlider.addEventListener('input', () => {
-    freeToUse = parseInt(freeSlider.value, 10) || 0;
-    freeNumber.value = freeToUse;
-    recalcBuy();
-  });
-
-  freeNumber.addEventListener('input', () => {
-    let v = parseInt(freeNumber.value, 10) || 0;
-    if (v < 0) v = 0;
-    if (v > maxFree) v = maxFree;
-    freeToUse = v;
-    freeSlider.value = v;
-    recalcBuy();
-  });
-
-  freeMaxBtn.addEventListener('click', () => {
-    freeToUse = maxFree;
-    freeSlider.value = maxFree;
-    freeNumber.value = maxFree;
-    recalcBuy();
-  });
 
   buyBtn.addEventListener('click', openBuyModal);
   root.querySelector('#buy-cancel').addEventListener('click', () => modalBuy.classList.add('hidden'));
@@ -485,13 +443,10 @@ export async function renderLottery(root, lotteryId) {
     }
   });
 
-  async function reloadData() {
-    const [tRes, fRes] = await Promise.all([
-      lottery.tickets(lotteryId),
-      lottery.myFreeTickets(lotteryId),
-    ]);
-    ticketsData = tRes.tickets;
-    freeCount = fRes.count;
+   async function reloadData() {
+    const res = await lottery.full(lotteryId);
+    ticketsData = res.tickets || [];
+    freeCount = res.free_count || 0;
 
     const myTicketsNew = ticketsData.filter((t) => t.user_id === me.id);
     const myPaid = myTicketsNew.filter((t) => !t.is_free).length;
@@ -647,13 +602,18 @@ export async function renderLottery(root, lotteryId) {
   const drawBtn = body.querySelector('#draw-now-btn');
   if (drawBtn) {
     drawBtn.addEventListener('click', async () => {
-      if (!confirm('Разыграть лотерею прямо сейчас? Отменить нельзя.')) return;
+            const ok = await showConfirm({
+        title: 'Разыграть лотерею?',
+        message: 'Разыграть лотерею прямо сейчас?<br><br>Отменить нельзя.',
+        confirmText: 'Разыграть',
+      });
+      if (!ok) return;
       drawBtn.disabled = true;
       drawBtn.textContent = 'Разыгрываем…';
       try {
         const res = await lottery.draw(lotteryId);
         const r = res.result;
-        alert(`🎉 Розыгрыш завершён!\nРазыграно призов: ${r.drawn_count} из ${r.total_prizes}`);
+        showToast(`🎉 Розыгрыш завершён!\nРазыграно призов: ${r.drawn_count} из ${r.total_prizes}`);
         navigate('/lottery/' + lotteryId);
         setTimeout(() => window.location.reload(), 50);
       } catch (err) {
@@ -663,7 +623,7 @@ export async function renderLottery(root, lotteryId) {
           lottery_cancelled: 'Лотерея отменена',
           lottery_not_found: 'Лотерея не найдена',
         };
-        alert(map[err.message] || 'Ошибка: ' + err.message);
+              buyError.textContent = map[err.message] || 'Ошибка: ' + err.message;
       } finally {
         drawBtn.disabled = false;
         drawBtn.textContent = '🎲 Разыграть сейчас';
@@ -673,6 +633,29 @@ export async function renderLottery(root, lotteryId) {
 
   renderGrid();
   updateCheckout();
+
+  const statusCheckInterval = setInterval(async () => {
+    if (!location.hash.startsWith('#/lottery/' + lotteryId)) {
+      clearInterval(statusCheckInterval);
+      return;
+    }
+
+    try {
+      const res = await lottery.full(lotteryId);
+      const newStatus = res.lottery?.status;
+      if (newStatus === 'drawn' || newStatus === 'cancelled') {
+        clearInterval(statusCheckInterval);
+        window.location.reload();
+      }
+    } catch (e) {
+    }
+  }, 5000);
+
+  const cleanup = () => {
+    clearInterval(statusCheckInterval);
+    window.removeEventListener('hashchange', cleanup);
+  };
+  window.addEventListener('hashchange', cleanup);
 }
 
 async function renderWinners(body, lotteryId, l, prizes) {

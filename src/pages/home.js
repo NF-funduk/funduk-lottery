@@ -2,6 +2,7 @@ import { lottery, feedback, profile } from '../supabase.js';
 import { getUser, saveSession, logout } from '../auth.js';
 import { navigate } from '../router.js';
 import { logoHtml } from '../logo.js';
+import { showToast } from '../toast.js';
 
 const STATUS_LABELS = {
   intern: 'Стажёр',
@@ -214,7 +215,7 @@ export async function renderHome(root) {
     try {
       await feedback.send(text);
       modalFeedback.classList.add('hidden');
-      alert('✅ Спасибо! Отзыв отправлен.');
+      showToast('✅ Спасибо! Отзыв отправлен.');
     } catch (err) {
       const map = {
         text_too_short: 'Сообщение слишком короткое',

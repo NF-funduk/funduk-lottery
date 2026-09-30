@@ -1,5 +1,6 @@
 import { supabase, chat } from './supabase.js';
 import { getUser, isLoggedIn } from './auth.js';
+import { showToast } from './toast.js';
 
 const STATUS_LABELS = {
   intern: 'Стажёр',
@@ -9,11 +10,12 @@ const STATUS_LABELS = {
 };
 
 let initialized = false;
-let channel = null;
 let messages = [];
 let isOpen = false;
 let unreadCount = 0;
 let currentUser = null;
+let pollInterval = null;
+let lastMessageId = null;
 
 const EMOJIS = [
   '😀', '😄', '😂', '🤣', '😊', '😍', '😘', '😎', '🤔', '🙄',
@@ -34,7 +36,6 @@ export function initChatWidget() {
   const widget = document.createElement('div');
   widget.id = 'chat-widget';
   widget.innerHTML = `
-    <!-- Кнопка-кружок -->
     <button class="chat-bubble" id="chat-bubble" title="Чат">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -42,7 +43,6 @@ export function initChatWidget() {
       <span class="chat-bubble-badge hidden" id="chat-badge">0</span>
     </button>
 
-    <!-- Окно чата -->
     <div class="chat-window hidden" id="chat-window">
       <div class="chat-header">
         <div class="chat-title">
@@ -93,12 +93,15 @@ export function initChatWidget() {
     bubble.classList.add('hidden');
     unreadCount = 0;
     updateBadge();
-    await loadMessages();
+
+    await loadMessages(true);
+
     setTimeout(() => {
       input.focus();
       scrollToBottom();
     }, 50);
-    subscribeRealtime();
+
+    startPolling();
   }
 
   function closeChat() {
@@ -106,19 +109,39 @@ export function initChatWidget() {
     win.classList.add('hidden');
     bubble.classList.remove('hidden');
     emojiPicker.classList.add('hidden');
-    unsubscribeRealtime();
+    stopPolling();
   }
 
   bubble.addEventListener('click', openChat);
   closeBtn.addEventListener('click', closeChat);
 
-  async function loadMessages() {
+  async function loadMessages(scroll = false) {
     try {
       const res = await chat.list(100);
-      messages = res.messages || [];
+      const newMessages = res.messages || [];
+
+      const lastNew = newMessages[newMessages.length - 1];
+      const lastCurrent = messages[messages.length - 1];
+
+      if (newMessages.length === messages.length &&
+          lastNew?.id === lastCurrent?.id) {
+        return;
+      }
+
+      if (!isOpen && lastNew && lastNew.id !== lastMessageId) {
+        unreadCount++;
+        updateBadge();
+      }
+
+      messages = newMessages;
+      if (lastNew) lastMessageId = lastNew.id;
+
       renderMessages();
+      if (scroll) scrollToBottom();
     } catch (err) {
-      messagesEl.innerHTML = `<div class="chat-error">Ошибка: ${escapeHtml(err.message)}</div>`;
+      if (isOpen) {
+        messagesEl.innerHTML = `<div class="chat-error">Ошибка: ${escapeHtml(err.message)}</div>`;
+      }
     }
   }
 
@@ -135,17 +158,15 @@ export function initChatWidget() {
         const time = formatTime(m.created_at);
         return `
           <div class="chat-msg ${isMine ? 'mine' : 'theirs'}">
-          <div class="chat-msg-head">
-            <span class="chat-msg-name">${escapeHtml(m.username)}</span>
-${m.user_status ? `<span class="role-badge chat-mini-badge" data-role="${m.user_status}">${STATUS_LABELS[m.user_status] || m.user_status}</span>` : ''}
-            <span class="chat-msg-time">${time}</span>
+            <div class="chat-msg-head">
+              <span class="chat-msg-name">${escapeHtml(m.username)}</span>
+              ${m.user_status ? `<span class="role-badge chat-mini-badge" data-role="${m.user_status}">${STATUS_LABELS[m.user_status] || m.user_status}</span>` : ''}
+              <span class="chat-msg-time">${time}</span>
+            </div>
+            <div class="chat-msg-text">${linkify(escapeHtml(m.text))}</div>
           </div>
-          <div class="chat-msg-text">${linkify(escapeHtml(m.text))}</div>
-        </div>
-      `;
-    }).join('');
-
-    scrollToBottom();
+        `;
+      }).join('');
   }
 
   function scrollToBottom() {
@@ -161,19 +182,14 @@ ${m.user_status ? `<span class="role-badge chat-mini-badge" data-role="${m.user_
     sendBtn.disabled = true;
 
     try {
-      const res = await chat.send(text);
-      if (res.message) {
-        if (!messages.find((m) => m.id === res.message.id)) {
-          messages.push(res.message);
-          renderMessages();
-        }
-      }
+      await chat.send(text);
+      await loadMessages(true);
     } catch (err) {
       const map = {
         text_empty: 'Пустое сообщение',
         text_too_long: 'Слишком длинное',
       };
-      alert(map[err.message] || 'Ошибка: ' + err.message);
+      showToast(map[err.message] || 'Ошибка: ' + err.message);
     } finally {
       sendBtn.disabled = false;
       input.focus();
@@ -214,31 +230,25 @@ ${m.user_status ? `<span class="role-badge chat-mini-badge" data-role="${m.user_
     }
   });
 
-  function subscribeRealtime() {
-    if (channel) return;
-    channel = supabase
-      .channel('chat-messages')
-            .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
-        (payload) => {
-          const newMsg = payload.new;
-          console.log('REALTIME newMsg:', newMsg);
-          if (messages.find((m) => m.id === newMsg.id)) return;
-          messages.push(newMsg);
-          if (messages.length > 200) messages.shift();
-          renderMessages();
-          if (!isOpen) {
-            unreadCount++;
-            updateBadge();
-          }
-        },
-      )
-      .subscribe();
+  function startPolling() {
+    if (pollInterval) return;
+    pollInterval = setInterval(() => {
+      loadMessages(false);
+    }, 3000);
   }
 
-  function unsubscribeRealtime() {
+  function stopPolling() {
+    if (pollInterval) {
+      clearInterval(pollInterval);
+      pollInterval = null;
+    }
   }
+
+  setInterval(() => {
+    if (!isOpen) {
+      loadMessages(false);
+    }
+  }, 10000);
 
   function updateBadge() {
     if (unreadCount > 0) {
@@ -249,7 +259,7 @@ ${m.user_status ? `<span class="role-badge chat-mini-badge" data-role="${m.user_
     }
   }
 
-  subscribeRealtime();
+  loadMessages(false);
 }
 
 function formatTime(iso) {
