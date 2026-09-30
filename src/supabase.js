@@ -8,6 +8,24 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
+let _sessionExpiredShown = false;
+
+function handleSessionExpired() {
+  sessionStorage.removeItem('funduk_token');
+  sessionStorage.removeItem('funduk_user');
+
+  if (_sessionExpiredShown) return;
+  _sessionExpiredShown = true;
+
+  alert('🔒 Сессия истекла. Пожалуйста, зайди заново.');
+  if (location.hash !== '#/login') {
+    location.hash = '#/login';
+    setTimeout(() => location.reload(), 50);
+  } else {
+    location.reload();
+  }
+}
+
 export async function loginRequest(username, password) {
   const res = await fetch(`${SUPABASE_URL}/functions/v1/login`, {
     method: 'POST',
@@ -19,22 +37,45 @@ export async function loginRequest(username, password) {
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'login_failed');
-  return data; // { token, user }
+  return data;
 }
 
 export async function callFunction(name, payload) {
-  const token = localStorage.getItem('funduk_token');
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/${name}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${token}`,
-    },
-    body: JSON.stringify(payload),
-  });
+  const token = sessionStorage.getItem('funduk_token');
+
+  let res;
+  try {
+    res = await fetch(`${SUPABASE_URL}/functions/v1/${name}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (networkErr) {
+    handleSessionExpired();
+    throw new Error('session_expired');
+  }
+
+  if (res.status === 401 || res.status === 403) {
+    handleSessionExpired();
+    throw new Error('session_expired');
+  }
+
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'request_failed');
+  if (!res.ok) {
+    if (
+      data.error === 'invalid_token' ||
+      data.error === 'no_token' ||
+      data.error === 'forbidden'
+    ) {
+      handleSessionExpired();
+      throw new Error('session_expired');
+    }
+    throw new Error(data.error || 'request_failed');
+  }
   return data;
 }
 
@@ -74,7 +115,7 @@ export const lottery = {
     callFunction('lottery', { action: 'buy', lottery_id, ticket_numbers, use_free }),
   create: (payload) => callFunction('lottery', { action: 'create', ...payload }),
   draw: (lottery_id) => callFunction('lottery', { action: 'draw', lottery_id }),
-  winners: (lottery_id) => callFunction('lottery', { action: 'winners', lottery_id}),
+  winners: (lottery_id) => callFunction('lottery', { action: 'winners', lottery_id }),
   all: () => callFunction('lottery', { action: 'all' }),
 };
 
@@ -83,6 +124,7 @@ export const profile = {
   lotteryHistory: () => callFunction('profile', { action: 'my_lottery_history' }),
   changePassword: (old_password, new_password) =>
     callFunction('profile', { action: 'change_password', old_password, new_password }),
+  refreshToken: () => callFunction('profile', { action: 'refresh_token' }),
 };
 
 export const feedback = {

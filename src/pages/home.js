@@ -1,5 +1,5 @@
-import { lottery, feedback } from '../supabase.js';
-import { getUser, logout } from '../auth.js';
+import { lottery, feedback, profile } from '../supabase.js';
+import { getUser, saveSession, logout } from '../auth.js';
 import { navigate } from '../router.js';
 import { logoHtml } from '../logo.js';
 
@@ -12,7 +12,8 @@ const STATUS_LABELS = {
 
 export async function renderHome(root) {
   document.title = 'HardEvo Lottery';
-  const user = getUser();
+
+  let user = getUser();
 
   root.innerHTML = `
     <div class="container">
@@ -30,7 +31,7 @@ export async function renderHome(root) {
             </div>
             <div class="up-balance-wrap">
               <div class="up-balance-label">Баланс</div>
-              <div class="up-balance">${user?.balance ?? 0}</div>
+              <div class="up-balance" id="up-balance">${user?.balance ?? 0}</div>
             </div>
             <button class="icon-btn-logout" id="logout-btn" title="Выйти">
               <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -82,6 +83,57 @@ export async function renderHome(root) {
   });
   const adminBtn = root.querySelector('#nav-admin');
   if (adminBtn) adminBtn.addEventListener('click', () => navigate('/admin'));
+
+  refreshUser();
+
+  async function refreshUser() {
+    try {
+      const res = await profile.me();
+      if (!res?.user) return;
+
+      const fresh = res.user;
+      const old = getUser();
+
+      const changed =
+        old?.status !== fresh.status ||
+        old?.balance !== fresh.balance ||
+        old?.username !== fresh.username;
+
+      if (changed) {
+        saveSession(sessionStorage.getItem('funduk_token'), {
+          ...old,
+          ...fresh,
+        });
+        user = { ...old, ...fresh };
+
+        const nameEl = root.querySelector('.up-name');
+        const badgeEl = root.querySelector('.role-badge');
+        const balEl = root.querySelector('#up-balance');
+        const adminBtnEl = root.querySelector('#nav-admin');
+        const headerRight = root.querySelector('.header-right');
+
+        if (nameEl) nameEl.textContent = fresh.username;
+        if (badgeEl) {
+          badgeEl.textContent = STATUS_LABELS[fresh.status] || fresh.status;
+          badgeEl.setAttribute('data-role', fresh.status);
+        }
+        if (balEl) balEl.textContent = fresh.balance;
+
+        if (fresh.status === 'admin' && !adminBtnEl) {
+          const btn = document.createElement('button');
+          btn.className = 'btn ghost';
+          btn.id = 'nav-admin';
+          btn.textContent = 'Админка';
+          btn.addEventListener('click', () => navigate('/admin'));
+          headerRight.insertBefore(btn, root.querySelector('#profile-btn'));
+        } else if (fresh.status !== 'admin' && adminBtnEl) {
+          adminBtnEl.remove();
+        }
+      }
+    } catch (e) {
+      console.warn('Не удалось обновить данные юзера:', e.message);
+    }
+  }
 
   const grid = root.querySelector('#lotteries-grid');
   let allLotteries = [];
@@ -256,9 +308,6 @@ function formatDeadline(deadlineIso) {
   return `до конца ${mins}м`;
 }
 
-// ============================================================
-// Утилиты
-// ============================================================
 function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, (c) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',

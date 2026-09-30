@@ -1,5 +1,5 @@
-import { admin, lottery } from '../supabase.js';
-import { getUser } from '../auth.js';
+import { admin, lottery, profile } from '../supabase.js';
+import { getUser, saveSession } from '../auth.js';
 import { navigate } from '../router.js';
 import { logoHtml } from '../logo.js';
 
@@ -301,6 +301,13 @@ export async function renderAdmin(root) {
     });
   });
 
+  function switchToLotteriesTab() {
+    root.querySelectorAll('.admin-tab').forEach((t) => t.classList.remove('active'));
+    root.querySelector('.admin-tab[data-tab="lotteries"]').classList.add('active');
+    $('#tab-users').classList.add('hidden');
+    $('#tab-lotteries').classList.remove('hidden');
+  }
+
   function setupChipPicker(selector, onChange) {
     root.querySelectorAll(`${selector} .chip`).forEach((chip) => {
       chip.addEventListener('click', () => {
@@ -570,6 +577,29 @@ export async function renderAdmin(root) {
 
     try {
       await admin.updateUser(editTarget, username, editStatus);
+
+      const me = getUser();
+      if (me && editTarget === me.id) {
+        try {
+          const res = await profile.refreshToken();
+          if (res.token && res.user) {
+            saveSession(res.token, res.user);
+          } else {
+            saveSession(sessionStorage.getItem('funduk_token'), {
+              ...me,
+              username,
+              status: editStatus,
+            });
+          }
+        } catch (e) {
+          saveSession(sessionStorage.getItem('funduk_token'), {
+            ...me,
+            username,
+            status: editStatus,
+          });
+        }
+      }
+
       modalEdit.classList.add('hidden');
       loadUsers();
     } catch (err) {
@@ -823,7 +853,10 @@ export async function renderAdmin(root) {
           <div class="payout-row total"><span class="label">ID</span><span class="value" style="font-size:11px">${res.lottery_id}</span></div>
         </div>
       `);
+
       loadLotteriesStat();
+      loadLotteriesTable();
+      switchToLotteriesTab();
     } catch (err) {
       const map = {
         forbidden: 'Нет прав',

@@ -1,7 +1,7 @@
 // supabase/functions/profile/index.ts
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import { verify } from "https://deno.land/x/djwt@v3.0.1/mod.ts";
+import { verify, create, getNumericDate } from "https://deno.land/x/djwt@v3.0.1/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -56,7 +56,10 @@ Deno.serve(async (req) => {
           p_user_id: userId,
         });
         if (error) return json({ error: "db_error", details: error.message }, 500);
-        return json({ user: data?.[0] || null });
+        if (!data || data.length === 0) {
+          return json({ error: "user_not_found" }, 404);
+        }
+        return json({ user: data[0] });
       }
 
       case "my_lottery_history": {
@@ -91,6 +94,34 @@ Deno.serve(async (req) => {
         if (!ok) return json({ error: "wrong_password" }, 401);
 
         return json({ ok: true });
+      }
+
+      case "refresh_token": {
+        const { data: freshUser, error: freshErr } = await supabase
+          .rpc("get_my_profile", { p_user_id: userId });
+
+        if (freshErr) {
+          return json({ error: "db_error", details: freshErr.message }, 500);
+        }
+        if (!freshUser || freshUser.length === 0) {
+          return json({ error: "user_not_found" }, 404);
+        }
+
+        const u = freshUser[0];
+
+        const newToken = await create(
+          { alg: "HS256", typ: "JWT" },
+          {
+            sub: u.id,
+            username: u.username,
+            status: u.status,
+            role: "authenticated",
+            exp: getNumericDate(60 * 60 * 24), // 24 часа
+          },
+          key,
+        );
+
+        return json({ token: newToken, user: u });
       }
 
       default:

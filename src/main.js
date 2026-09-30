@@ -1,6 +1,7 @@
 import './style.css';
 import { startRouter, register, navigate, setNotFound } from './router.js';
-import { isLoggedIn } from './auth.js';
+import { isLoggedIn, logout } from './auth.js';
+import { profile } from './supabase.js';
 import { renderLogin } from './pages/login.js';
 import { renderHome } from './pages/home.js';
 import { renderAdmin } from './pages/admin.js';
@@ -69,3 +70,46 @@ function syncChat() {
 
 window.addEventListener('hashchange', syncChat);
 setTimeout(syncChat, 100);
+
+let heartbeatRunning = false;
+
+async function checkSession() {
+  if (!isLoggedIn()) return;
+  if (heartbeatRunning) return;
+  heartbeatRunning = true;
+
+  try {
+    await profile.me();
+  } catch (err) {
+    const msg = err?.message || '';
+    if (
+      msg.includes('session_expired') ||
+      msg.includes('user_not_found') ||
+      msg.includes('invalid_token') ||
+      msg.includes('no_token')
+    ) {
+      logout();
+      alert('🔒 Твой аккаунт больше не активен. Войди заново.');
+      location.hash = '#/login';
+      setTimeout(() => location.reload(), 50);
+    }
+  } finally {
+    heartbeatRunning = false;
+  }
+}
+
+window.addEventListener('load', () => {
+  checkSession();
+});
+
+setInterval(() => {
+  if (document.visibilityState === 'visible') {
+    checkSession();
+  }
+}, 30 * 1000);
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    checkSession();
+  }
+});

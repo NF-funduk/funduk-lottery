@@ -12,6 +12,7 @@ const STATUS_LABELS = {
 
 export async function renderProfile(root) {
   document.title = 'HardEvo Lottery · Профиль';
+
   root.innerHTML = `
     <div class="container">
       <div class="header">
@@ -145,7 +146,10 @@ export async function renderProfile(root) {
 }
 
 function renderHistoryCard(h) {
-  const isWon = h.won_place != null;
+  const wonPlaces = h.won_places || [];
+  const wonPrizes = h.won_prizes || [];
+  const isWon = wonPlaces.length > 0;
+
   const statusMap = {
     active: { label: 'Активна', cls: 'active' },
     drawing: { label: 'Розыгрыш', cls: 'drawing' },
@@ -153,6 +157,15 @@ function renderHistoryCard(h) {
     cancelled: { label: 'Отменена', cls: 'cancelled' },
   };
   const st = statusMap[h.lottery_status] || { label: h.lottery_status, cls: '' };
+
+  const winsHtml = wonPlaces.map((place, i) => {
+    const prize = wonPrizes[i] || 'Приз';
+    return `
+      <div class="hc-win">
+        🏆 Место ${place} · ${escapeHtml(prize)}
+      </div>
+    `;
+  }).join('');
 
   return `
     <div class="history-card-v2 ${isWon ? 'won' : ''}" data-lottery-id="${h.lottery_id}">
@@ -167,11 +180,7 @@ function renderHistoryCard(h) {
         <div class="hc-row">
           <span>Первая покупка</span><b>${formatDate(h.first_purchase_at)}</b>
         </div>
-        ${isWon ? `
-          <div class="hc-win">
-            🏆 Место ${h.won_place} · ${escapeHtml(h.won_prize_title || 'Приз')}
-          </div>
-        ` : ''}
+        ${winsHtml}
       </div>
     </div>
   `;
