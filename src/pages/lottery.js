@@ -402,7 +402,7 @@ export async function renderLottery(root, lotteryId) {
     if (selected.size === 0) return;
     const count = selected.size;
     maxFree = Math.min(freeCount, count);
-    freeToUse = Math.min(maxFree, Math.max(0, count - paidLimitLeft));
+    freeToUse = maxFree;
 
     freeSlider.min = 0;
     freeSlider.max = maxFree;
